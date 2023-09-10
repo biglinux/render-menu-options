@@ -1,12 +1,7 @@
 #!/usr/bin/env bash
 
-if [ $(id -u) -eq 0 ]; then
-	native=$(find /usr/share/applications/ -iname "*.desktop")
-	flatpack=$(find /var/lib/flatpak/exports/share/applications/ -iname "*.desktop")
-else
-	native=$(find "$HOME"/.local/share/applications -iname "*.desktop")
-	flatpack=""
-fi
+native=$(find /usr/share/applications/ -iname "*.desktop")
+flatpack=$(find /var/lib/flatpak/exports/share/applications/ -iname "*.desktop")
 
 nvidiaRender() {
 #lista todos os .desktop da pasta /usr/share/applications/

@@ -2,9 +2,9 @@
 Description=Add rendering type in menu
 ConditionUser=!root
 
-[Path]
-PathModified=%h/.local/share/applications
-Unit=render-menu-options.service
+[Service]
+Type=oneshot
+ExecStart=/usr/share/render-menu-options/render-menu-options-user.sh
 
 [Install]
 WantedBy=default.target
