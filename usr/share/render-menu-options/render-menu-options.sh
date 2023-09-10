@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 
+IFS=$'\n'
+
 native=$(find /usr/share/applications/ -iname "*.desktop")
-flatpack=$(find /var/lib/flatpak/exports/share/applications/ -iname "*.desktop")
+flatpak=$(find /var/lib/flatpak/exports/share/applications/ -iname "*.desktop")
 
 nvidiaRender() {
 #lista todos os .desktop da pasta /usr/share/applications/
-for i in "$native" "$flatpack"; do
+for i in $native $flatpak; do
 	#verificar se o arquivo existe
 	if [ -f "$i" ];then
 		#Verificar se já tem nvidiaRender no .desktop, evita duplicar
@@ -36,7 +38,7 @@ done
 # }
 
 integratedRender() {
-for i in "$native" "$flatpack"; do
+for i in $native $flatpak; do
 	#verificar se o arquivo existe
 	if [ -f "$i" ];then
 		#Verificar se já tem nvidiaOffLoad no .desktop, evita duplicar
@@ -63,7 +65,7 @@ done
 }
 
 softwareRender() {
-for i in "$native" "$flatpack"; do
+for i in $native $flatpak; do
 	#verificar se o arquivo existe
 	if [ -f "$i" ];then
 		#Verificar se já tem nvidiaOffLoad no .desktop, evita duplicar
