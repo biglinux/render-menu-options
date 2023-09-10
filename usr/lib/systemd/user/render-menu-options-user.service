@@ -4,7 +4,7 @@ ConditionUser=!root
 
 [Service]
 Type=oneshot
-ExecStart=/usr/share/render-menu-options/render-menu-options-user.sh
+ExecStart=/usr/share/render-menu-options/render-menu-options.sh
 
 [Install]
 WantedBy=default.target
