@@ -1,0 +1,9 @@
+[Unit]
+Description=Add rendering type in menu
+
+[Path]
+PathModified=/usr/share/applications
+Unit=render-menu-options.service
+
+[Install]
+WantedBy=default.target

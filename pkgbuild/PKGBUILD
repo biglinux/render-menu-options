@@ -1,7 +1,7 @@
 # Maintainer: Barnabé di Kartola <barnabedikartola@gmail.com>
 
-pkgname=biglinux-package-template
-pkgdesc="Package template for biglinux"
+pkgname=render-menu-options
+pkgdesc="Add rendering type in menu"
 # depends=('')
 # makedepends=('')
 # conflicts=('')

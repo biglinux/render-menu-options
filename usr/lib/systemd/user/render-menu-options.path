@@ -1,0 +1,10 @@
+[Unit]
+Description=Add rendering type in menu
+ConditionUser=!root
+
+[Path]
+PathModified=%h/.local/share/applications
+Unit=render-menu-options.service
+
+[Install]
+WantedBy=default.target
