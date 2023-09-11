@@ -7,7 +7,7 @@ for App in $Applications; do
 	# Select first Exec in .desktop
 	Exec=$(grep -oPm1 "Exec=\K.*" "$App")
 	# Verify if Actions exist
-	if [[ "$(grep -q "Actions=" "$App")" ]]; then
+	if ! grep -q "Actions=" "$App"; then
 		# Add to Actions
 		sed -i "/Actions=/s/$/$AddRender/" "$App"
 	else
@@ -20,12 +20,13 @@ Actions=$AddRender" >> "$App"
 	IFS=";"; for RenderMode in $AddRender; do
 		echo "
 [Desktop Action $RenderMode]
-Name=${$RenderMode/Render/ Render}
+Name=${RenderMode/Render/ Render}
 Exec=$RenderMode $Exec" >> "$App"
+	done
 done
 }
 
-if [[ $UUID = 0 ]];
+if [[ $UUID = 0 ]]; then
 	# If running as root, search in native and flatpak folder
 	Folder='/var/lib/flatpak/exports/share/applications/*.desktop /usr/share/applications/*.desktop'
 else
@@ -44,8 +45,8 @@ if [ -e "/usr/bin/optimus-manager" ]; then
 else
 	# Verify files in native and flatpak folder without SoftwareRender
 	Applications=$(grep -L 'Action SoftwareRender' $Folder)
-	AddRender="software;" AddRender
+	AddRender="SoftwareRender;" AddRender
 fi
 
 #Update database of desktop entries
-update-desktop-database /usr/share/applications
+update-desktop-database
