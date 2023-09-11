@@ -6,6 +6,11 @@ IFS=$'\n'
 # Assign the first argument passed to the script to the variable "Folder"
 Folder=$1
 
+# If not exist folder, just exit
+if [[ ! -e $Folder ]]; then
+    exit
+fi
+
 # Define a function named AddRenderInFile
 AddRenderInFile() {
     # Loop over each application listed in the "Applications" variable
