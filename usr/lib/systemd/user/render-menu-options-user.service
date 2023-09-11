@@ -1,10 +1,10 @@
 [Unit]
 Description=Add rendering type in menu
-ConditionUser=!root
+PartOf=graphical-session.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/share/render-menu-options/render-menu-options.sh
+ExecStart=/usr/share/render-menu-options/render-menu-options.sh "$HOME/.local/share/applications/"
 
 [Install]
 WantedBy=default.target

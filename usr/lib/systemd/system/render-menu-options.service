@@ -1,9 +1,10 @@
 [Unit]
 Description=Add rendering type in menu
+After=default.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/share/render-menu-options/render-menu-options.sh
+ExecStart=/usr/share/render-menu-options/render-menu-options.sh '/usr/share/applications/'
 
 [Install]
 WantedBy=default.target

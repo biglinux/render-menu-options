@@ -1,6 +1,5 @@
 [Unit]
 Description=Add rendering type in menu
-ConditionUser=!root
 
 [Path]
 PathModified=%h/.local/share/applications
