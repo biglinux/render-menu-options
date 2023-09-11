@@ -1,50 +1,32 @@
-## arg 1:  the new package version
-#pre_install() {
-	# do something here
-#}
-
-## arg 1:  the new package version
+# Function to handle post-installation tasks
 post_install() {
-	if [ ! -d "/etc/systemd/user/default.target.wants/" ];then
-		mkdir -p /etc/systemd/user/default.target.wants/
-	fi
-	if [ ! -e "/etc/systemd/user/default.target.wants/render-menu-options.path" ];then
-		ln -s /usr/lib/systemd/user/render-menu-options-user.path /etc/systemd/user/default.target.wants/render-menu-options-user.path
-	fi
-	
-	
-# 	if [ ! -d "/etc/systemd/system/default.target.wants/" ];then
-# 		mkdir -p /etc/systemd/system/default.target.wants/
-# 	fi
-# 	if [ ! -e "/etc/systemd/system/default.target.wants/render-menu-options.path" ];then
-# 		ln -s /usr/lib/systemd/system/render-menu-options.path /etc/systemd/system/default.target.wants/render-menu-options.path
-		systemctl enable --now render-menu-options.path
-		systemctl start render-menu-options.service
-# 	fi
-# 	if [ ! -e "/etc/systemd/system/default.target.wants/render-menu-options-flatpak.path" ];then
-# 		ln -s /usr/lib/systemd/system/render-menu-options-flatpak.path /etc/systemd/system/default.target.wants/render-menu-options-flatpak.path
-		systemctl enable --now render-menu-options-flatpak.path
-		systemctl start render-menu-options-flatpak.service
-# 	fi
+  
+  # Check if the directory for user-specific systemd services exists
+  if [ ! -d "/etc/systemd/user/default.target.wants/" ]; then
+    # Create the directory if it doesn't exist
+    mkdir -p /etc/systemd/user/default.target.wants/
+  fi
+  
+  # Check if the symbolic link for the 'render-menu-options-user.path' exists
+  if [ ! -e "/etc/systemd/user/default.target.wants/render-menu-options-user.path" ]; then
+    # Create the symbolic link if it doesn't exist
+    ln -s /usr/lib/systemd/user/render-menu-options-user.path /etc/systemd/user/default.target.wants/render-menu-options-user.path
+  fi
+  
+  # Enable and start the 'render-menu-options' systemd path unit
+  systemctl enable --now render-menu-options.path
+  
+  # Start the 'render-menu-options' systemd service unit
+  systemctl start render-menu-options.service
+  
+  # Enable and start the 'render-menu-options-flatpak' systemd path unit
+  systemctl enable --now render-menu-options-flatpak.path
+  
+  # Start the 'render-menu-options-flatpak' systemd service unit
+  systemctl start render-menu-options-flatpak.service
 }
 
-## arg 2:  the old package version
-#pre_upgrade() {
-	# do something here
-#}
-
-## arg 2:  the old package version
+# Function to handle post-upgrade tasks, which simply calls post_install
 post_upgrade() {
-	post_install
+  post_install
 }
-
-## arg 1:  the old package version
-#pre_remove() {
-	# do something here
-#}
-
-## arg 1:  the old package version
-#post_remove() {
-	# do something here
-#}
- 
