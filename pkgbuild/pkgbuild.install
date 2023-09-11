@@ -14,16 +14,16 @@ post_install() {
   fi
   
   # Enable and start the 'render-menu-options' systemd path unit
-  systemctl enable --now render-menu-options.path
-  
-  # Start the 'render-menu-options' systemd service unit
-  systemctl start render-menu-options.service
+  systemctl enable render-menu-options.path
   
   # Enable and start the 'render-menu-options-flatpak' systemd path unit
-  systemctl enable --now render-menu-options-flatpak.path
-  
+  systemctl enable render-menu-options-flatpak.path
+
+  # Start the 'render-menu-options' systemd service unit
+  systemctl start render-menu-options.service &
+
   # Start the 'render-menu-options-flatpak' systemd service unit
-  systemctl start render-menu-options-flatpak.service
+  systemctl start render-menu-options-flatpak.service &
 }
 
 # Function to handle post-upgrade tasks, which simply calls post_install

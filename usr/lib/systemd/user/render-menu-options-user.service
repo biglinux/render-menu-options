@@ -7,7 +7,7 @@ StartLimitBurst=20
 [Service]
 Type=oneshot
 ExecStartPre=/bin/sleep 10
-ExecStart=/usr/share/render-menu-options/render-menu-options.sh "$HOME/.local/share/applications/"
+ExecStart=/usr/share/render-menu-options/render-menu-options.sh "%h/.local/share/applications/"
 Restart=no
 
 [Install]
