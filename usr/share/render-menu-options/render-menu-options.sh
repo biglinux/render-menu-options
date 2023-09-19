@@ -40,7 +40,7 @@ Exec=$RenderMode $Exec" >> "$App"
 }
 
 # Check if the "optimus-manager" utility is installed
-if [ -e "/usr/bin/optimus-manager" ]; then
+if [ -e "/usr/bin/nvidia-prime" ]; then
     # Find all .desktop files in the specified folder that do not have an "Action NvidiaRender"
     Applications=$(grep -L 'Action NvidiaRender' $Folder/*.desktop)
     AddRender="NvidiaRender;IntegratedRender;SoftwareRender;" AddRenderInFile
