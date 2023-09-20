@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
-sudo systemctl start render-menu-options.service
-sudo systemctl start render-menu-options-flatpak.service
-systemctl --user start render-menu-options-user.service
+systemctl start render-menu-options.service
+systemctl start render-menu-options-flatpak.service
+for user in $(awk -F':' '{ if ($3 >= 1000 && $1 != "nobody") print $1 }' /etc/passwd); do
+    if [ -e /home/"${user}"/.local/share/applications ];then
+        /usr/share/render-menu-options/render-menu-options.sh "/home/"${user}"/.local/share/applications/"
+    fi
+done

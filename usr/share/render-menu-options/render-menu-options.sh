@@ -47,7 +47,7 @@ Name=${render/Render/ Render}
 Exec=$render $exec" >> "$app"
     done
     # Update the desktop database to reflect changes in .desktop files
-    update-desktop-database $folder
+    update-desktop-database -q $folder
 done
 
 

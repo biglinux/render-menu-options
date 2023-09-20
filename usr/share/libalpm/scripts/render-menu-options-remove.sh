@@ -30,6 +30,6 @@ for render in ${RenderType[@]}; do
 			#remove Desktop Action
 			sed -i "/Desktop Action $render/,/^$/d" $App
 		done
-	update-desktop-database $folder
+	update-desktop-database -q $folder
 	done
 done
