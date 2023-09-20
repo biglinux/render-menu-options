@@ -15,7 +15,7 @@ renderType=(
 SoftwareRender
 )
 # Check if the "optimus-manager" or "nvidia-prime" utility is installed and append to $renderType
-if [ -e "/usr/bin/optimus-manager" -o -e "/usr/bin/prime-run" ]; then
+if [ -e "/usr/bin/optimus-manager" -o -e "/usr/bin/prime-run" -o -e "/usr/bin/switcherooctl" ]; then
     renderType+=(NvidiaRender)
     renderType+=(IntegratedRender)
 # Check for amdGPU
