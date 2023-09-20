@@ -35,6 +35,8 @@ post_upgrade() {
 }
 
 pre_remove() {
+  rm /etc/systemd/user/default.target.wants/render-menu-options-user.path
+  rm /etc/systemd/user/default.target.wants/render-menu-options-user.service
   systemctl disable --now render-menu-options.path
   systemctl disable --now render-menu-options-flatpak.path
 }
