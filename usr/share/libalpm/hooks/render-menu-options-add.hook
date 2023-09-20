@@ -1,0 +1,13 @@
+[Trigger]
+Type = Path
+Operation = Install
+Operation = Upgrade
+
+Target = usr/bin/optimus-manager
+Target = usr/bin/prime-run
+Target = usr/bin/switcherooctl
+
+[Action]
+Description = Add Render Menu
+When = PostTransaction
+Exec = /usr/share/libalpm/scripts/render-menu-options-add.sh

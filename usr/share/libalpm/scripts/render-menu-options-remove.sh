@@ -11,7 +11,9 @@ if [ -d /var/lib/flatpak/exports/share/applications ];then
 fi
 #add users to $folderType
 for user in $(awk -F':' '{ if ($3 >= 1000 && $1 != "nobody") print $1 }' /etc/passwd); do
-	folderType+=(/home/"${user}"/.local/share/applications)
+	if [ -e /home/"${user}"/.local/share/applications ];then
+		folderType+=(/home/"${user}"/.local/share/applications)
+	fi
 done
 
 RenderType=(
