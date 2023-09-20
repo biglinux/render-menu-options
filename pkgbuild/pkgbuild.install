@@ -1,29 +1,30 @@
 # Function to handle post-installation tasks
 post_install() {
-  
+  # Enable Systemd for User
   # Check if the directory for user-specific systemd services exists
   if [ ! -d "/etc/systemd/user/default.target.wants/" ]; then
     # Create the directory if it doesn't exist
     mkdir -p /etc/systemd/user/default.target.wants/
   fi
-  
   # Check if the symbolic link for the 'render-menu-options-user.path' exists
   if [ ! -e "/etc/systemd/user/default.target.wants/render-menu-options-user.path" ]; then
     # Create the symbolic link if it doesn't exist
     ln -s /usr/lib/systemd/user/render-menu-options-user.path /etc/systemd/user/default.target.wants/render-menu-options-user.path
     ln -s /usr/lib/systemd/user/render-menu-options-user.service /etc/systemd/user/default.target.wants/render-menu-options-user.service
-
   fi
-  
+  # Start the 'render-menu-options' for user HOME folder
+  for user in $(awk -F':' '{ if ($3 >= 1000 && $1 != "nobody") print $1 }' /etc/passwd); do
+    if [ -e /home/"${user}"/.local/share/applications ];then
+        /usr/share/render-menu-options/render-menu-options.sh "/home/"${user}"/.local/share/applications/"
+    fi
+  done
+
   # Enable and start the 'render-menu-options' systemd path unit
   systemctl enable render-menu-options.path
-  
   # Enable and start the 'render-menu-options-flatpak' systemd path unit
   systemctl enable render-menu-options-flatpak.path
-
   # Start the 'render-menu-options' systemd service unit
   systemctl start render-menu-options.service &
-
   # Start the 'render-menu-options-flatpak' systemd service unit
   systemctl start render-menu-options-flatpak.service &
 }
@@ -34,6 +35,8 @@ post_upgrade() {
 }
 
 pre_remove() {
+  rm /etc/systemd/user/default.target.wants/render-menu-options-user.path
+  rm /etc/systemd/user/default.target.wants/render-menu-options-user.service
   systemctl disable --now render-menu-options.path
   systemctl disable --now render-menu-options-flatpak.path
 }
@@ -50,7 +53,9 @@ post_remove() {
   fi
   #add users to $folderType
   for user in $(awk -F':' '{ if ($3 >= 1000 && $1 != "nobody") print $1 }' /etc/passwd); do
-    folderType+=(/home/"${user}"/.local/share/applications)
+    if [ -e /home/"${user}"/.local/share/applications ];then
+      folderType+=(/home/"${user}"/.local/share/applications)
+    fi
   done
 
   RenderType=(
@@ -68,7 +73,7 @@ post_remove() {
         #remove Desktop Action
         sed -i "/Desktop Action $render/,/^$/d" $App
       done
-      update-desktop-database $folder
+      update-desktop-database -q $folder
     done
   done
 }
