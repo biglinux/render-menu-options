@@ -1,0 +1,12 @@
+[Trigger]
+Type = Path
+Operation = Remove
+
+Target = usr/bin/optimus-manager
+Target = usr/bin/prime-run
+Target = usr/bin/switcherooctl
+
+[Action]
+Description = Remove Render Menu
+When = PostTransaction
+Exec = /usr/share/libalpm/scripts/render-menu-options-remove.sh
