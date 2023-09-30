@@ -38,7 +38,7 @@ for render in ${renderType[@]}; do
         else
             # If "Actions" line doesn't exist, create it and set its value to "renderType"
             echo "
-Actions=$render" >> "$app"
+Actions=${render};" >> "$app"
         fi
         # Loop over each rendering mode specified in "$renderType"
         echo "
