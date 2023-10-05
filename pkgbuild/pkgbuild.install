@@ -10,8 +10,13 @@ post_install() {
   if [ ! -e "/etc/systemd/user/default.target.wants/render-menu-options-user.path" ]; then
     # Create the symbolic link if it doesn't exist
     ln -s /usr/lib/systemd/user/render-menu-options-user.path /etc/systemd/user/default.target.wants/render-menu-options-user.path
-    ln -s /usr/lib/systemd/user/render-menu-options-user.service /etc/systemd/user/default.target.wants/render-menu-options-user.service
   fi
+
+  # Check if the symbolic link for the 'render-menu-options-user.path' exists
+  if [ ! -e "/etc/systemd/user/default.target.wants/render-menu-options-user.service" ]; then
+    rm /etc/systemd/user/default.target.wants/render-menu-options-user.service
+  fi
+
   # Start the 'render-menu-options' for user HOME folder
   for user in $(awk -F':' '{ if ($3 >= 1000 && $1 != "nobody") print $1 }' /etc/passwd); do
     if [ -e /home/"${user}"/.local/share/applications ];then
