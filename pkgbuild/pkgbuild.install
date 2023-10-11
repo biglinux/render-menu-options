@@ -67,6 +67,7 @@ post_remove() {
   SoftwareRender
   NvidiaRender
   IntegratedRender
+  AmdRender
   )
 
   for render in ${RenderType[@]}; do

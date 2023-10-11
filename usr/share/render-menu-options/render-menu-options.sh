@@ -15,13 +15,15 @@ renderType=(
 SoftwareRender
 )
 # Check if the "optimus-manager" or "nvidia-prime" utility is installed and append to $renderType
-if [ -e "/usr/bin/optimus-manager" -o -e "/usr/bin/prime-run" -o -e "/usr/bin/switcherooctl" ]; then
+vgaList=$(lspci | grep -iE "VGA|3D|Display")
+if [[ $(echo $vgaList | grep -i nvidia) ]] && [[ $(echo "$vgaList" | wc -l) > 1 ]]; then
+# if [ -e "/usr/bin/optimus-manager" -o -e "/usr/bin/prime-run" -o -e "/usr/bin/switcherooctl" ]; then
     renderType+=(NvidiaRender)
     renderType+=(IntegratedRender)
 # Check for amdGPU
-# elif [  ]; then
-#     renderType+=(amdGPURender)
-#     renderType+=(IntegratedRender)
+elif [[ $(echo $vgaList | grep -Ei '(VGA|3D|Display).*(radeon|amd|ati)') ]] && [[ $(echo "$vgaList" | wc -l) > 1 ]]; then
+    renderType+=(AmdRender)
+    renderType+=(IntegratedRender)
 fi
 
 # Loop over each application listed in the "Applications" variable
