@@ -12,8 +12,8 @@ post_install() {
     ln -s /usr/lib/systemd/user/render-menu-options-user.path /etc/systemd/user/default.target.wants/render-menu-options-user.path
   fi
 
-  # Check if the symbolic link for the 'render-menu-options-user.path' exists
-  if [ ! -e "/etc/systemd/user/default.target.wants/render-menu-options-user.service" ]; then
+  # Check if the symbolic link for the 'render-menu-options-user.service' exists
+  if [ -e "/etc/systemd/user/default.target.wants/render-menu-options-user.service" ]; then
     rm /etc/systemd/user/default.target.wants/render-menu-options-user.service
   fi
 
