@@ -1,6 +1,6 @@
 [Unit]
 Description=Add rendering type in menu
-PartOf=graphical-session.target
+After=multi-user.target
 StartLimitIntervalSec=60s
 StartLimitBurst=20
 
