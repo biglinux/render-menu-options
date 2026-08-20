@@ -1,85 +1,40 @@
-# Function to handle post-installation tasks
+# Everything this package does at runtime is one systemd unit: it publishes the
+# menu entries the hardware justifies. There is nothing to watch, nothing to
+# re-apply after an upgrade, and no package-manager hook.
+#
+# What older versions wrote into other packages' desktop files is left alone.
+# Those files are owned by those packages, so each edit goes away when its own
+# package is next upgraded; until then the affected applications offer the entry
+# twice, once in English without an icon (owner, 2026-08-19).
+
 post_install() {
-  # Enable Systemd for User
-  # Check if the directory for user-specific systemd services exists
-  if [ ! -d "/etc/systemd/user/default.target.wants/" ]; then
-    # Create the directory if it doesn't exist
-    mkdir -p /etc/systemd/user/default.target.wants/
-  fi
-  # Check if the symbolic link for the 'render-menu-options-user.path' exists
-  if [ ! -e "/etc/systemd/user/default.target.wants/render-menu-options-user.path" ]; then
-    # Create the symbolic link if it doesn't exist
-    ln -s /usr/lib/systemd/user/render-menu-options-user.path /etc/systemd/user/default.target.wants/render-menu-options-user.path
-  fi
-
-  # Check if the symbolic link for the 'render-menu-options-user.service' exists
-  if [ -e "/etc/systemd/user/default.target.wants/render-menu-options-user.service" ]; then
-    rm /etc/systemd/user/default.target.wants/render-menu-options-user.service
-  fi
-
-  # Start the 'render-menu-options' for user HOME folder
-  for user in $(awk -F':' '{ if ($3 >= 1000 && $1 != "nobody") print $1 }' /etc/passwd); do
-    if [ -e /home/"${user}"/.local/share/applications ];then
-        /usr/share/render-menu-options/render-menu-options.sh "/home/"${user}"/.local/share/applications/"
-    fi
-  done
-
-  # Enable and start the 'render-menu-options' systemd path unit
-  systemctl enable render-menu-options.path
-  # Enable and start the 'render-menu-options-flatpak' systemd path unit
-  systemctl enable render-menu-options-flatpak.path
-  # Start the 'render-menu-options' systemd service unit
-  systemctl start render-menu-options.service &
-  # Start the 'render-menu-options-flatpak' systemd service unit
-  systemctl start render-menu-options-flatpak.service &
+  systemctl enable render-menu-options.service
+  systemctl start render-menu-options.service
 }
 
-# Function to handle post-upgrade tasks, which simply calls post_install
 post_upgrade() {
+  # The path units and hooks earlier versions installed are gone from the
+  # package, so anything still enabled points at a file that no longer exists.
+  for unit in render-menu-options.path render-menu-options-flatpak.path; do
+    systemctl stop "$unit" >/dev/null 2>&1 || true
+    rm -f "/etc/systemd/system/multi-user.target.wants/$unit" \
+          "/etc/systemd/system/default.target.wants/$unit"
+  done
+  rm -f /etc/systemd/user/default.target.wants/render-menu-options-user.path \
+        /etc/systemd/user/default.target.wants/render-menu-options-user.service
+  systemctl daemon-reload >/dev/null 2>&1 || true
+
   post_install
 }
 
 pre_remove() {
-  rm /etc/systemd/user/default.target.wants/render-menu-options-user.path
-  rm /etc/systemd/user/default.target.wants/render-menu-options-user.service
-  systemctl disable --now render-menu-options.path
-  systemctl disable --now render-menu-options-flatpak.path
+  # The unit outlives the files it was built from otherwise: systemd keeps it
+  # loaded and enabled, and the symlink in multi-user.target.wants points at a
+  # unit file pacman is about to delete.
+  systemctl disable --now render-menu-options.service
 }
 
 post_remove() {
-  IFS=$'\n'
-
-  folderType=(
-  /usr/share/applications
-  )
-  #if the flatpak directory exists add it to $folderType
-  if [ -d /var/lib/flatpak/exports/share/applications ];then
-    folderType+=(/var/lib/flatpak/exports/share/applications)
-  fi
-  #add users to $folderType
-  for user in $(awk -F':' '{ if ($3 >= 1000 && $1 != "nobody") print $1 }' /etc/passwd); do
-    if [ -e /home/"${user}"/.local/share/applications ];then
-      folderType+=(/home/"${user}"/.local/share/applications)
-    fi
-  done
-
-  RenderType=(
-  SoftwareRender
-  NvidiaRender
-  IntegratedRender
-  AmdRender
-  )
-
-  for render in ${RenderType[@]}; do
-    for folder in ${folderType[@]}; do
-      Applications=$(grep -sl "Action $render" $folder/*.desktop)
-      for App in ${Applications[@]}; do
-        #remove app from action=
-        sed -i "/Actions=/s/$render;//g" $App
-        #remove Desktop Action
-        sed -i "/Desktop Action $render/,/^$/d" $App
-      done
-      update-desktop-database -q $folder
-    done
-  done
+  rm -f /usr/share/plasma/kickeractions/render-menu-options.desktop
+  systemctl daemon-reload
 }

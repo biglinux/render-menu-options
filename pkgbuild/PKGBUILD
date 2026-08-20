@@ -1,16 +1,26 @@
 # Maintainer: Barnabé di Kartola <barnabedikartola@gmail.com>
 
 pkgname=render-menu-options
-pkgdesc="Add rendering type in menu"
-# depends=('')
-# makedepends=('')
-# conflicts=('')
+pkgdesc="Add rendering options to the application menu"
+# switcheroo-control is asked which GPUs exist and what environment selects
+# each one, both when the entries are published and when one is clicked.
+# gio launch runs the application named by the desktop file the menu hands
+# over, which is what carries the rendering environment into it.
+# vulkan-swrast provides Lavapipe: without it the software entry points the
+# Vulkan loader at a driver that is not installed, and the application gets no
+# Vulkan device at all.
+depends=('glib2' 'switcheroo-control' 'vulkan-swrast')
+# A 32-bit application -- Wine and Proton above all -- looks for its own
+# Lavapipe, and the 64-bit one cannot answer for it.
+optdepends=('lib32-vulkan-swrast: software Vulkan rendering for 32-bit applications, Wine and Proton')
+# The menu entry is localized the way desktop files are: one template plus the
+# catalogs in po/, merged by msgfmt.
+makedepends=('gettext')
 pkgver=$(date +%y.%m.%d)
 pkgrel=$(date +%H%M)
 arch=('any')
 license=('GPL3')
 url="https://github.com/biglinux/$pkgname"
-provides=("$pkgname")
 source=("git+${url}.git")
 md5sums=('SKIP')
 if [ -e "${pkgname}.install" ];then
@@ -19,24 +29,43 @@ elif [ -e "pkgbuild.install" ];then
     install=pkgbuild.install
 fi
 
-package() {
-    # Verify default folder
+_internal_dir() {
     if [ -d "${srcdir}/${pkgname}/${pkgname}" ]; then
-        InternalDir="${srcdir}/${pkgname}/${pkgname}"
+        echo "${srcdir}/${pkgname}/${pkgname}"
     else
-        InternalDir="${srcdir}/${pkgname}"
+        echo "${srcdir}/${pkgname}"
     fi
+}
 
-    # Copy files
-    if [ -d "${InternalDir}/usr" ]; then
-        cp -r "${InternalDir}/usr" "${pkgdir}/"
-    fi
+build() {
+    local InternalDir
+    InternalDir="$(_internal_dir)"
 
-    if [ -d "${InternalDir}/etc" ]; then
-        cp -r "${InternalDir}/etc" "${pkgdir}/"
-    fi
+    # Translate the menu entry: msgfmt --desktop fills in one Name[xx] line per
+    # catalog listed in po/LINGUAS, so adding a language adds no code.
+    msgfmt --desktop \
+        --template="${InternalDir}/usr/share/${pkgname}/${pkgname}.desktop.in" \
+        -d "${InternalDir}/po" \
+        -o "${srcdir}/${pkgname}.desktop"
+}
 
-    if [ -d "${InternalDir}/opt" ]; then
-        cp -r "${InternalDir}/opt" "${pkgdir}/"
-    fi
+package() {
+    local InternalDir
+    InternalDir="$(_internal_dir)"
+
+    cp -r "${InternalDir}/usr" "${pkgdir}/"
+
+    # Kicker looks the directory up once per plasmashell process and keeps the
+    # result (plasma-workspace, applets/kicker/actionlist.cpp: the locations are
+    # a const static, the files inside are re-read every time). Missing at that
+    # moment, it stays missing for the whole session -- so the package owns the
+    # directory rather than leaving it to a service that now publishes in the
+    # background.
+    install -d "${pkgdir}/usr/share/plasma/kickeractions"
+
+    # The template is build input; what ships is the translated file the
+    # service publishes from.
+    rm -f "${pkgdir}/usr/share/${pkgname}/${pkgname}.desktop.in"
+    install -Dm644 "${srcdir}/${pkgname}.desktop" \
+        "${pkgdir}/usr/share/${pkgname}/${pkgname}.desktop"
 }

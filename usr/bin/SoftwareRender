@@ -1,3 +1,43 @@
 #!/usr/bin/env bash
-
-__NV_PRIME_RENDER_OFFLOAD="" __VK_LAYER_NV_optimus="" __GLX_VENDOR_LIBRARY_NAME="" LIBGL_ALWAYS_SOFTWARE=1 $@
+# Runs the command it is given with software rendering, on all three graphics
+# APIs. Each needs its own lever, and each was measured on a machine whose
+# default GPU is an NVIDIA card driven by the proprietary driver plus GLVND:
+#
+#   Vulkan  VK_LOADER_DRIVERS_SELECT='*lvp*' leaves the loader with Lavapipe,
+#           Mesa's software rasterizer, as the only driver it discovers. Chosen
+#           over VK_DRIVER_FILES because it matches a driver name rather than a
+#           path: the manifest is lvp_icd.json here and lvp_icd.x86_64.json in
+#           the Flatpak runtime, and the variable survives into the sandbox.
+#
+#   GLX     LIBGL_ALWAYS_SOFTWARE is a Mesa variable, and GLVND picks the vendor
+#           library before Mesa is ever consulted -- so on NVIDIA it did nothing
+#           at all: glxinfo still reported the GTX 1660 Ti. Naming mesa as the
+#           GLX vendor is what makes it apply. On a Mesa-only machine this
+#           selects the vendor that would have been chosen anyway.
+#
+#   EGL     Same dispatch problem, and GLVND offers no name-based selector for
+#           EGL -- only the two path variables. The path below is libglvnd's
+#           standard location, owned by mesa. It is what a host application
+#           needs, where an NVIDIA EGL vendor sits beside Mesa's; Flatpak strips
+#           the variable, and the sandboxes measured here were handed Mesa as
+#           their only EGL vendor, which leaves LIBGL_ALWAYS_SOFTWARE enough
+#           inside one.
+#
+# Any GPU selection inherited from the session, a user profile or
+# switcheroo-control is cleared first, because it would otherwise win over the
+# filter. That is not hypothetical: a session here set VK_DRIVER_FILES to the
+# NVIDIA ICD alone, which left the Lavapipe filter matching nothing and the
+# application with no Vulkan device at all.
+[[ $# -gt 0 ]] || { printf 'usage: %s COMMAND [ARGUMENT...]\n' "${0##*/}" >&2; exit 2; }
+exec env \
+    -u DRI_PRIME \
+    -u VK_DRIVER_FILES -u VK_ICD_FILENAMES -u VK_ADD_DRIVER_FILES \
+    -u VK_LOADER_DRIVERS_DISABLE -u VK_LOADER_DEVICE_SELECT \
+    -u MESA_VK_DEVICE_SELECT -u MESA_VK_DEVICE_SELECT_FORCE_DEFAULT_DEVICE \
+    -u MESA_LOADER_DRIVER_OVERRIDE \
+    -u __NV_PRIME_RENDER_OFFLOAD -u __VK_LAYER_NV_optimus \
+    LIBGL_ALWAYS_SOFTWARE=true \
+    VK_LOADER_DRIVERS_SELECT='*lvp*' \
+    __GLX_VENDOR_LIBRARY_NAME=mesa \
+    __EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/50_mesa.json \
+    "$@"

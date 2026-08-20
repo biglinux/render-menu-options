@@ -1,97 +1,71 @@
 #!/usr/bin/env bash
+# Publishes the render entries Plasma's application menu offers.
+#
+# Plasma reads /usr/share/plasma/kickeractions and runs the chosen entry with
+# the target application's own desktop file as its argument (plasma-workspace,
+# applets/kicker/actionlist.cpp). One file therefore reaches every application,
+# where this package used to edit every .desktop file it found.
+#
+# Run once per boot, because a boot is when the GPUs can have changed, and
+# because a package installed while building an ISO would otherwise record the
+# GPUs of the machine that built it.
+#
+# The GPU numbers in the template are not detected: switcherooctl numbers the
+# GPUs identically in `list` and in `launch -g`, and moves the default one to
+# the front, so 0 is always the GPU driving the display and 1 always the first
+# other one. All the hardware decides is whether there is a second GPU at all,
+# and whether it is a dedicated card or an integrated one -- which is the
+# question switcheroo-control exists to answer, and the same one KDE puts to it
+# (kio, src/gui/gpudetection.cpp). Asking rather than guessing from PCI vendor
+# ids is what keeps "run with the NVIDIA GPU" off a machine whose NVIDIA card
+# is already the one driving the display.
+#
+# Published is the shipped template with its Actions line narrowed. Names
+# arrive already translated, from po/ via msgfmt at build time.
 
-# Set Internal Field Separator to newline character to properly read each line of text
-IFS=$'\n'
+set -eu
 
-# Assign the first argument passed to the script to the variable "Folder"
-folder=$1
+template=${RENDER_MENU_TEMPLATE:-/usr/share/render-menu-options/render-menu-options.desktop}
+target=${RENDER_MENU_TARGET:-/usr/share/plasma/kickeractions/render-menu-options.desktop}
 
-# If not exist folder, just exit
-if [[ ! -e $folder ]]; then
-    exit
-fi
-
-renderType=(
-SoftwareRender
-)
-# Check if the "optimus-manager" or "nvidia-prime" utility is installed and append to $renderType
-vgaList=$(lspci | grep -iE "VGA|3D|Display")
-if [[ $(echo $vgaList | grep -i nvidia) ]] && [[ $(echo "$vgaList" | wc -l) > 1 ]]; then
-# if [ -e "/usr/bin/optimus-manager" -o -e "/usr/bin/prime-run" -o -e "/usr/bin/switcherooctl" ]; then
-    renderType+=(NvidiaRender)
-    renderType+=(IntegratedRender)
-# Check for amdGPU
-elif [[ $(echo $vgaList | grep -Ei '(VGA|3D|Display).*(radeon|amd|ati)') ]] && [[ $(echo "$vgaList" | wc -l) > 1 ]]; then
-    renderType+=(AmdRender)
-    renderType+=(IntegratedRender)
-fi
-
-# Loop over each application listed in the "Applications" variable
-for render in ${renderType[@]}; do
-    # Find all .desktop files in the specified folder that do not have an "Action $renderType"
-    applications=$(grep -sLP "Actions=.*$render" $folder/*.desktop)
-    for app in ${applications[@]}; do
-        # Extract the "Exec" command from the .desktop file
-        exec=$(grep -oPm1 "Exec=\K.*" "$app")
-        # Check if the "Actions" line exists in the .desktop file
-        if grep -q "Actions=" "$app"; then
-            # Append the "renderType" value to the existing "Actions" line
-            sed -i "/Actions=/s/$/${render};/" "$app"
-        else
-            # If "Actions" line doesn't exist, create it and set its value to "renderType"
-            echo "
-Actions=${render};" >> "$app"
+# `switcherooctl list` prints a Device/Name/Default/Discrete/Environment block
+# per GPU, and nothing at all when the service cannot be reached -- which
+# leaves the software entry alone, the honest offer when the GPUs are unknown.
+second_gpu=
+device=
+while read -r key value; do
+    case $key in
+    Device:) device=$value ;;
+    Discrete:)
+        if [[ $device == 1 ]]; then
+            if [[ $value == yes ]]; then
+                second_gpu=DiscreteGpu
+            else
+                second_gpu=IntegratedGpu
+            fi
         fi
-        # Loop over each rendering mode specified in "$renderType"
-        echo "
-[Desktop Action $render]
-Name=${render/Render/ Render}
-Exec=$render $exec" >> "$app"
-    done
-    # Update the desktop database to reflect changes in .desktop files
-    update-desktop-database -q $folder
-done
+        ;;
+    esac
+done < <(switcherooctl list)
 
+# A second GPU is what makes "run on the other one" mean anything.
+renders=(SoftwareRender)
+if [[ -n $second_gpu ]]; then
+    renders+=(DefaultGpu "$second_gpu")
+fi
 
-# # Define a function named AddRenderInFile
-# AddRenderInFile() {
-#     # Loop over each application listed in the "Applications" variable
-#     for App in $Applications; do
-#         # Extract the "Exec" command from the .desktop file
-#         Exec=$(grep -oPm1 "Exec=\K.*" "$App")
-#         
-#         # Check if the "Actions" line exists in the .desktop file
-#         if grep -q "Actions=" "$App"; then
-#             # Append the "AddRender" value to the existing "Actions" line
-#             sed -i "/Actions=/s/$/$AddRender/" "$App"
-#         else
-#             # If "Actions" line doesn't exist, create it and set its value to "AddRender"
-#             echo "
-# Actions=$AddRender" >> "$App"
-#         fi
-# 
-#         # Loop over each rendering mode specified in "AddRender", separated by semicolons
-#         IFS=";"; for RenderMode in $AddRender; do
-#             # Add a new "[Desktop Action ...]" section for each rendering mode
-#             echo "
-# [Desktop Action $RenderMode]
-# Name=${RenderMode/Render/ Render}
-# Exec=$RenderMode $Exec" >> "$App"
-#         done
-#     done
-# }
-# 
-# # Check if the "optimus-manager" utility is installed
-# if [ -e "/usr/bin/optimus-manager" -o -e "/usr/bin/prime-run" ]; then
-#     # Find all .desktop files in the specified folder that do not have an "Action NvidiaRender"
-#     Applications=$(grep -L 'Action NvidiaRender' $Folder/*.desktop)
-#     AddRender="NvidiaRender;IntegratedRender;SoftwareRender;" AddRenderInFile
-# else
-#     # Find all .desktop files in the specified folder that do not have an "Action SoftwareRender"
-#     Applications=$(grep -L 'Action SoftwareRender' $Folder/*.desktop)
-#     # Define render mode to add as "SoftwareRender;"
-#     AddRender="SoftwareRender;" AddRenderInFile
-# fi
-# 
-# # Update the desktop database to reflect changes in .desktop files
-# update-desktop-database $Folder
+# Without this key Plasma reads the file, finds the action groups and shows
+# nothing, which looks exactly like the package not being installed.
+grep -q '^Actions=' "$template" || {
+    printf '%s: no Actions line to narrow\n' "$template" >&2
+    exit 1
+}
+
+mkdir -p "$(dirname "$target")"
+actions=$(
+    IFS=';'
+    echo "${renders[*]};"
+)
+trap 'rm -f "$target.new"' EXIT
+sed "s/^Actions=.*/Actions=$actions/" "$template" >"$target.new"
+mv "$target.new" "$target"

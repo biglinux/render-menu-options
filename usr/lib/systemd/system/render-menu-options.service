@@ -1,14 +1,27 @@
+# Publishes the menu entries once per boot, because the GPUs that decide which
+# entries exist are what changes at boot. The package-manager hooks this
+# replaces were specific to one distribution; a unit is what every systemd
+# system already knows how to run.
 [Unit]
-Description=Add rendering type in menu
-After=default.target
-StartLimitIntervalSec=60s
-StartLimitBurst=20
+Description=Publish rendering options in the application menu
+ConditionPathExists=/usr/share/render-menu-options/render-menu-options.desktop
+# switcheroo-control answers which GPUs exist. Asked before it is up, the
+# answer is an empty list, and the GPU entries stay missing until the next
+# boot -- so the ordering is stated rather than left to the fact that its own
+# unit happens to run Before=multi-user.target.
+Wants=switcheroo-control.service
+After=switcheroo-control.service
 
 [Service]
-Type=oneshot
-ExecStartPre=/bin/sleep 10
-ExecStart=/usr/share/render-menu-options/render-menu-options.sh '/usr/share/applications/'
-Restart=no
+# Type=exec, not oneshot: a target waits for every job in its transaction, so
+# a oneshot here held multi-user.target -- and with it the login screen -- for
+# as long as this took, measured at ~180ms of which nearly all is the Python
+# startup inside switcherooctl. Type=exec finishes the job once the script is
+# exec'd and lets it publish in the background, while still reporting a script
+# that cannot be started at all. Nothing waits on the result: the menu only
+# needs it by the time someone opens an application's context menu.
+Type=exec
+ExecStart=/usr/share/render-menu-options/render-menu-options.sh
 
 [Install]
-WantedBy=default.target
+WantedBy=multi-user.target

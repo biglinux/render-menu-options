@@ -1,0 +1,46 @@
+# Plasma reads this file as a service and takes its actions; the entry itself
+# is never shown or launched. Which actions are offered depends on the GPUs
+# switcheroo-control reports, and the service that installs this file filters
+# the Actions= line accordingly.
+[Desktop Entry]
+Type=Application
+NoDisplay=true
+Exec=true
+# TRANSLATORS: Names the group the actions below belong to. Plasma reads the
+# actions and never shows this, so it needs no imperative form.
+Name=Rendering options
+Icon=video-display
+Actions=SoftwareRender;DefaultGpu;DiscreteGpu;IntegratedGpu;
+
+# Mesa's own switch rather than a choice between GPUs, so switcheroo-control
+# has nothing to say about this one.
+[Desktop Action SoftwareRender]
+# TRANSLATORS: Item in an application's context menu in the application menu.
+# Runs the application on the CPU instead of on any graphics processor.
+Name=Software rendering
+Icon=video-display
+Exec=SoftwareRender /usr/share/render-menu-options/launch-desktop.sh %u
+
+[Desktop Action DefaultGpu]
+# TRANSLATORS: Item in an application's context menu. Runs the application on
+# the graphics processor that already drives the display.
+Name=Run with the default GPU
+Icon=video-display
+Exec=switcherooctl launch -g 0 /usr/share/render-menu-options/launch-desktop.sh %u
+
+# Only one of the two below is ever offered. The second GPU is named by what
+# switcheroo-control says it is, so the entry cannot promise a dedicated card
+# on a machine whose second GPU is the integrated one.
+[Desktop Action DiscreteGpu]
+# TRANSLATORS: Item in an application's context menu. Runs the application on
+# a separate, dedicated graphics card rather than the default one.
+Name=Run with the dedicated GPU
+Icon=video-display
+Exec=switcherooctl launch -g 1 /usr/share/render-menu-options/launch-desktop.sh %u
+
+[Desktop Action IntegratedGpu]
+# TRANSLATORS: Item in an application's context menu. Runs the application on
+# the graphics processor built into the CPU or chipset.
+Name=Run with the integrated GPU
+Icon=video-display
+Exec=switcherooctl launch -g 1 /usr/share/render-menu-options/launch-desktop.sh %u
